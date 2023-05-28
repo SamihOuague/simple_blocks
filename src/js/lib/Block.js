@@ -1,6 +1,6 @@
 import { Vector3D } from "./Vector";
 
-let Block = function (x, y, z, size) {
+let Block = function (x, y, z, size = 50) {
     Vector3D.call(this, x, y, z);
 
     size *= 0.5;

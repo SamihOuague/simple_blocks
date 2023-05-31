@@ -109,7 +109,7 @@ class Scene {
     }
 
     draw_block = (block) => {
-        let n_block = this.rotateY(block.vertices);
+        let n_block = block.vertices;
         let vertices = this.project(n_block);
         
         this.ctx.strokeStyle = "#ffffff";
@@ -143,8 +143,8 @@ class Scene {
                 this.ctx.lineTo(vertices[face[2]].x, vertices[face[2]].y);
                 this.ctx.lineTo(vertices[face[3]].x, vertices[face[3]].y);
                 this.ctx.closePath();
-                this.ctx.stroke();
                 this.ctx.fill();
+                this.ctx.stroke();
             }
         }
     }
@@ -208,38 +208,77 @@ class Scene {
         let prop_x = -n.x / 100;
         
 
-        this.camera.z += this.velocity.z * (prop_z);
-        this.camera.x += this.velocity.z * (prop_x);
+        let x_pos = Math.round(this.camera.x - (this.camera.x % 50));
+        let z_pos = Math.round(this.camera.z - (this.camera.z % 50));
 
-        this.camera.x += this.velocity.x * (prop_z);
-        this.camera.z += -this.velocity.x * (prop_x);
+        let f = this.blocks.find((v) => {
+            return v.z == (z_pos + 50) && v.x == x_pos && (v.y <= this.camera.y + 50 && v.y >= this.camera.y - 50);
+        });
 
-        if (this.velocity.y < 0 && this.camera.y > -100) this.camera.y += this.velocity.y;
-        else if (this.camera.y <= -100 && this.camera.y < -50) this.velocity.y = 0;
-            
-        if (this.velocity.y == 0 && this.camera.y < -50) this.camera.y += 4;
+        let b = this.blocks.find((v) => {
+            return v.z == (z_pos - 50) && v.x == x_pos && (v.y <= this.camera.y + 50 && v.y >= this.camera.y - 50);
+        });
+
+        let e = this.blocks.find((v) => {
+            return v.x == (x_pos + 50) && v.z == z_pos && (v.y <= this.camera.y + 50 && v.y >= this.camera.y - 50);
+        });
+
+        let w = this.blocks.find((v) => {
+            return v.x == (x_pos - 50) && v.z == z_pos && (v.y <= this.camera.y + 50 && v.y >= this.camera.y - 50);
+        });
+
+
+        let [n_cam_zz, n_cam_xx, n_cam_zx, n_cam_xz] = [this.velocity.z * (prop_z), 
+                                    -this.velocity.x * (prop_x), 
+                                    this.velocity.z * (prop_x), 
+                                    this.velocity.x * (prop_z)];
+
+        if (!(f && n_cam_zz > 0) && !(b && n_cam_zz < 0)) this.camera.z += n_cam_zz;
+        if (!(e && n_cam_zx > 0) && !(w && n_cam_zx < 0)) this.camera.x += n_cam_zx;
+
+        
+        if (!(f && n_cam_xx > 0) && !(b && n_cam_xx < 0)) this.camera.z += n_cam_xx;
+        if (!(e && n_cam_xz > 0) && !(w && n_cam_xz < 0)) this.camera.x += n_cam_xz;
+        let y_pos = Math.round(this.camera.y);
+        let bottom = this.blocks.find((v) => {
+            return (v.x == x_pos && v.z == z_pos) && (v.y - 90) <= y_pos;
+        });
+
+        if (bottom && this.velocity.y >= 0) this.velocity.y = 0;
+        else this.velocity.y += (this.velocity.y < 100) ? 1 : 0;
+
+        
+
+        if (bottom && this.velocity.y == 0) {
+            this.camera.y = bottom.y - 90;
+        } else {
+            this.camera.y += this.velocity.y;
+        }
     }
 
     render = () => {
         this.ctx.clearRect(0, 0, this.width, this.height);
         this.update_position();
-        let blocks = this.blocks.slice().sort((a, b) => {
-            if (a.z == b.z) {
-                if (this.camera.x > b.x) return (a.x < b.x) ? -1 : 1;
-                else return (b.x < a.x) ? -1 : 1;
-            } else if (a.z == b.z && a.x == b.x) return (b.y < a.y) ? -1 : 1;
-            else if (this.camera.z < b.z) return (b.z < a.z) ? -1 : 1;
+
+        let bl = this.blocks.slice().map((v) => {
+            let tmp = this.rotateX(this.rotateY(v.vertices));
+            let nb = this.rotateY([v]);
+            return {...v, vertices: tmp, x: nb[0].x, y: nb[0].y, z: nb[0].z}
+        }).filter((v) => {
+            return v.z > this.camera.z;
+        });
+
+        bl = bl.sort((a, b) => {
+
+            if (this.camera.z < b.z) return (b.z < a.z) ? -1 : 1;
             else return (b.z > a.z) ? -1 : 1;
         });
 
-        for (let i = 0; i < blocks.length; i++) {
-            let block = blocks[i];
-            
-            block.x = block.vertices[0].x;
-            block.y = block.vertices[0].y;
-            block.z = block.vertices[0].z;
+        for (let i = 0; i < bl.length; i++) {
+            let block = bl[i];
             
             this.draw_block(block);
+            
         }
     }
 }

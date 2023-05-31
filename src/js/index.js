@@ -3,36 +3,16 @@ import Scene from "./lib/Scene";
 let canvas = document.getElementById("game");
 let ctx = canvas.getContext("2d");
 
-//let [ x_pos, y_pos, z_pos ] = document.getElementsByClassName("position");
-
 
 
 canvas.style.cursor = "none";
 
 let scene = new Scene(document.documentElement.clientWidth, document.documentElement.clientHeight, ctx);
 
-//scene.add_block(0, -50, 150);
-//scene.add_block(0, 0,   150);
-//scene.add_block(0, -50, 250);
-//scene.add_block(0, 0,   250);
 
-scene.add_block(0, 0,   350);
-scene.add_block(50, 0, 350);
-scene.add_block(0, 0,  350);
-scene.add_block(0, -50,  350);
-scene.add_block(50, -50,  350);
-scene.add_block(50, 0, 150);
-scene.add_block(50, 0, 250);
-scene.add_block(-50, 0, 350);
-scene.add_block(50, 0, 350);
-scene.add_block(-50, 0, 450);
-scene.add_block(50, 0, 450);
-scene.add_block(-50, 0, 550);
-scene.add_block(50, 0, 550);
-//
-scene.camera.x = 0;
-scene.camera.y = -50;
-scene.camera.z = 0;
+scene.camera.x = 200;
+scene.camera.y = -180;
+scene.camera.z = 200;
 
 let controls = {
     left: false,
@@ -46,12 +26,15 @@ let rotation = {
     x: false,
 }
 
+let mx = Math.PI / (scene.width * 0.5);
+let my = (Math.PI * 0.5) / (scene.height * 0.5);
 
 canvas.addEventListener("mousemove", (e) => {
     let x_mouse = (e.clientX - e.target.offsetLeft) - (scene.width * 0.5);
-    let m = (x_mouse == 0) ? 0 : Math.PI / (scene.width * 0.5);
-
-    rotation.y = -(x_mouse * m);
+    let y_mouse = (e.clientY - e.target.offsetTop) - (scene.height * 0.5);
+    
+    rotation.x = (y_mouse * my);
+    rotation.y = -(x_mouse * mx);
 });
 
 window.addEventListener("keydown", (e) => {
@@ -67,7 +50,7 @@ window.addEventListener("keydown", (e) => {
     if (key == "i") rotation.up = true;
     if (key == "k") rotation.down = true;
     
-    if (key == " " && scene.camera.y == -50) scene.velocity.y = -4;
+    if (key == " " && scene.velocity.y == 0) scene.velocity.y = -11;
 });
 
 window.addEventListener("keyup", (e) => {
@@ -84,7 +67,12 @@ window.addEventListener("keyup", (e) => {
     if (key == "k") rotation.down = false;
 });
 
+for (let i = 2; i < 12; i++) {
+    for (let j = 2; j < 12; j++) scene.add_block(i * 50, 0, j * 50);
+}
 
+
+let [ x_pos, y_pos, z_pos ] = Array(3);
 setInterval(() => {
     if (controls.front) scene.velocity.z = 4;
     else if (controls.back) scene.velocity.z = -4;
@@ -94,13 +82,23 @@ setInterval(() => {
     else if (controls.left) scene.velocity.x = -4;
     else scene.velocity.x = 0;
 
-    if (rotation.y) scene.rotation.y = rotation.y;
+    scene.rotation.y = rotation.y;
+    scene.rotation.x = rotation.x;
+
+
     scene.render();
-    ctx.font = "20px monospace"
-    ctx.fillText(`X: ${Math.round(scene.camera.x)}`, 50, 50);
-    ctx.fillText(`Y: ${Math.round(scene.camera.z)}`, 50, 100);
-    ctx.fillText(`Z: ${Math.abs(scene.camera.y + 50)}`, 50, 150);
-    
+    x_pos = Math.round(scene.camera.x - (scene.camera.x % 50));
+    y_pos = Math.round(Math.abs(scene.camera.y));
+    z_pos = Math.round(scene.camera.z - (scene.camera.z % 50));
+
+    ctx.beginPath();
+    ctx.fillStyle = "#00ff00";
+    ctx.font = "20px monospace";
+
+    ctx.fillText(`X: ${x_pos}`, 50, 50);
+    ctx.fillText(`Y: ${z_pos}`, 50, 100);
+    ctx.fillText(`Z: ${y_pos}`, 50, 150);
+    ctx.closePath();
 }, 50);
 
 

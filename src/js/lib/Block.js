@@ -3,16 +3,16 @@ import { Vector3D } from "./Vector";
 let Block = function (x, y, z, size = 50) {
     Vector3D.call(this, x, y, z);
 
-    size *= 0.5;
+    //size *= 0.5;
 
-    this.vertices = [new Vector3D(x - size, y - size, z - size),
-                    new Vector3D(x + size, y - size, z - size),
-                    new Vector3D(x + size, y + size, z - size),
-                    new Vector3D(x - size, y + size, z - size),
-                    new Vector3D(x - size, y - size, z + size),
-                    new Vector3D(x + size, y - size, z + size),
+    this.vertices = [new Vector3D(x, y, z),
+                    new Vector3D(x + size, y, z),
+                    new Vector3D(x + size, y + size, z),
+                    new Vector3D(x, y + size, z),
+                    new Vector3D(x, y , z + size),
+                    new Vector3D(x + size, y , z + size),
                     new Vector3D(x + size, y + size, z + size),
-                    new Vector3D(x - size, y + size, z + size)];
+                    new Vector3D(x , y + size, z + size)];
                     
     this.faces = [[0, 1, 2, 3], // North face
                     [0, 4, 5, 1], // Top face

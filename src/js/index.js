@@ -10,24 +10,25 @@ canvas.style.cursor = "none";
 let scene = new Scene(document.documentElement.clientWidth, document.documentElement.clientHeight, ctx);
 
 
-scene.camera.x = 200;
-scene.camera.y = -180;
-scene.camera.z = 200;
+scene.camera.position.x = 200;
+scene.camera.position.y = -90;
+scene.camera.position.z = 150;
 
 let controls = {
     left: false,
     right: false,
     front: false,
     back: false,
+    jump: false,
 };
 
 let rotation = {
-    y: false,
-    x: false,
+    y: -1,
+    x: 0,
 }
 
 let mx = Math.PI / (scene.width * 0.5);
-let my = (Math.PI * 0.5) / (scene.height * 0.5);
+let my = (Math.PI / (Math.PI * 1.35)) / (scene.height * 0.5);
 
 canvas.addEventListener("mousemove", (e) => {
     let x_mouse = (e.clientX - e.target.offsetLeft) - (scene.width * 0.5);
@@ -44,13 +45,8 @@ window.addEventListener("keydown", (e) => {
     if (key == "a") controls.left = true;
     if (key == "w") controls.front = true;
     if (key == "s") controls.back = true;
-
-    if (key == "j") rotation.left = true;
-    if (key == "l") rotation.right = true;
-    if (key == "i") rotation.up = true;
-    if (key == "k") rotation.down = true;
     
-    if (key == " " && scene.velocity.y == 0) scene.velocity.y = -11;
+    if (key == " ") controls.jump = true;
 });
 
 window.addEventListener("keyup", (e) => {
@@ -60,36 +56,40 @@ window.addEventListener("keyup", (e) => {
     if (key == "a") controls.left = false;
     if (key == "w") controls.front = false;
     if (key == "s") controls.back = false;
-
-    if (key == "j") rotation.left = false;
-    if (key == "l") rotation.right = false;
-    if (key == "i") rotation.up = false;
-    if (key == "k") rotation.down = false;
+    if (key == " ") controls.jump = false;
 });
 
 for (let i = 2; i < 12; i++) {
     for (let j = 2; j < 12; j++) scene.add_block(i * 50, 0, j * 50);
 }
 
+scene.add_block(300, -50, 300);
+scene.add_block(300, -100, 350);
+scene.add_block(300, -150, 400);
+scene.add_block(300, -200, 450);
+scene.add_block(300, -250, 500);
 
 let [ x_pos, y_pos, z_pos ] = Array(3);
+
 setInterval(() => {
-    if (controls.front) scene.velocity.z = 4;
-    else if (controls.back) scene.velocity.z = -4;
-    else scene.velocity.z = 0;
+    if (controls.front) scene.camera.velocity.z = 5;
+    else if (controls.back) scene.camera.velocity.z = -5;
+    else scene.camera.velocity.z = 0;
 
-    if (controls.right) scene.velocity.x = 4;
-    else if (controls.left) scene.velocity.x = -4;
-    else scene.velocity.x = 0;
+    if (controls.right) scene.camera.velocity.x = 5;
+    else if (controls.left) scene.camera.velocity.x = -5;
+    else scene.camera.velocity.x = 0;
 
-    scene.rotation.y = rotation.y;
-    scene.rotation.x = rotation.x;
+    if (controls.jump && scene.camera.velocity.y == 0) scene.camera.velocity.y = -17;
+
+    scene.camera.rotation.y = rotation.y;
+    scene.camera.rotation.x = rotation.x;
 
 
     scene.render();
-    x_pos = Math.round(scene.camera.x - (scene.camera.x % 50));
-    y_pos = Math.round(Math.abs(scene.camera.y));
-    z_pos = Math.round(scene.camera.z - (scene.camera.z % 50));
+    x_pos = Math.round(scene.camera.position.x - (scene.camera.position.x % 50));
+    y_pos = Math.round(Math.abs(scene.camera.position.y));
+    z_pos = Math.round(scene.camera.position.z - (scene.camera.position.z % 50));
 
     ctx.beginPath();
     ctx.fillStyle = "#00ff00";
@@ -97,9 +97,6 @@ setInterval(() => {
 
     ctx.fillText(`X: ${x_pos}`, 50, 50);
     ctx.fillText(`Y: ${z_pos}`, 50, 100);
-    ctx.fillText(`Z: ${y_pos}`, 50, 150);
+    ctx.fillText(`Z: ${y_pos - 90}`, 50, 150);
     ctx.closePath();
-}, 50);
-
-
-//scene.render();
+}, 40);

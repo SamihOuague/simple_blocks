@@ -35,21 +35,46 @@ class Scene {
         this.update_neighbour();
     }
 
+    get_center = (v1, v2) => {
+        let p1_x = Math.round(Math.abs(Math.abs(v1[0].x) - Math.abs(v1[1].x)));
+        let p1_y = Math.round(Math.abs(Math.abs(v1[0].y) - Math.abs(v1[1].y)));
+        let p2_x = Math.round(Math.abs(Math.abs(v2[0].x) - Math.abs(v2[1].x)));
+        let p2_y = Math.round(Math.abs(Math.abs(v2[0].y) - Math.abs(v2[1].y)));
+        
+        if (p1_y < p1_x) {
+            console.log({p1_x, p1_y, p2_x, p2_y});
+            this.ctx.beginPath();
+            this.ctx.moveTo((this.width * 0.5), (this.height * 0.5));
+            this.ctx.lineTo(p1_x + (this.width * 0.5), p1_y + (this.height * 0.5));
+            this.ctx.moveTo((this.width * 0.5), (this.height * 0.5));
+            this.ctx.lineTo(p2_x + (this.width * 0.5), p2_y + (this.height * 0.5));
+            this.ctx.strokeStyle = "#ff0000"
+            this.ctx.closePath();
+            this.ctx.stroke();
+        }
+    }
 
-    draw_block = (block, color = "#005f00") => {
-        let vertices = this.camera.project(block.vertices, (this.width * 0.5), (this.height * 0.5));
-
+    draw_block = (block) => {
+        let w = (this.width * 0.5);
+        let h = (this.height * 0.5);
+        let vertices = this.camera.project(block.vertices, w, h);
+        
         for (let i = 0; i < block.faces.length; i++) {
-    
+            let color = "#005f00";
             let face = block.faces[i];
     
-            if (i == 0 && block.neighbours.north) continue;
-            else if (i == 1 && block.neighbours.top) continue;
+            if (i == 0) {
+                if (block.neighbours.north) continue;
+            }
+            else if (i == 1) {
+                if (block.neighbours.top) continue;                
+            } 
             else if (i == 2 && block.neighbours.east) continue;
             else if (i == 3 && block.neighbours.bottom) continue;
             else if (i == 4 && block.neighbours.west) continue;
-            else if (i == 5 && block.neighbours.south) continue;
-
+            else if (i == 5) {
+                if (block.neighbours.south) continue;
+            }
             let p1 = block.vertices[face[0]];
             let p2 = block.vertices[face[1]];
             let p3 = block.vertices[face[2]];
@@ -58,11 +83,16 @@ class Scene {
             let v2 = new Vector3D(p3.x - p1.x, p3.y - p1.y, p3.z - p1.z);
     
             let n = new Vector3D(v1.y * v2.z - v2.y * v1.z, v1.z * v2.x - v2.z * v1.x, v1.x * v2.y - v1.y * v2.x);
-
+            
             const { x, y, z } = this.camera.position;
+
+            //vertices[face[0]].x, vertices[face[0]].y
+            //vertices[face[1]].x, vertices[face[1]].y
+
             if ((x-p1.x) * n.x + (y-p1.y) * n.y + (z-p1.z) * n.z <= 0 && p1.z >= (this.camera.position.z - 50)) {
+                this.get_center([vertices[face[0]], vertices[face[1]]], [vertices[face[2]], vertices[face[3]]]);
                 this.ctx.beginPath();
-                this.ctx.fillStyle = "#005f00";
+                this.ctx.fillStyle = color;
                 this.ctx.strokeStyle = "#ffffff";
                 this.ctx.moveTo(vertices[face[0]].x, vertices[face[0]].y);
                 this.ctx.lineTo(vertices[face[1]].x, vertices[face[1]].y);
@@ -100,6 +130,7 @@ class Scene {
             let block = bl[i];
 
             this.draw_block(block);
+            break;
         }
 
         this.ctx.fillStyle = "#000000";

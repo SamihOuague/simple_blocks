@@ -13,7 +13,7 @@ class Camera {
         
         let focal_length = this.focal_length;
         
-        let v = this.rotateX(vectors).slice().map((v) => {
+        let v = vectors.slice().map((v) => {
             if (v.z < this.position.z) {
                 return {...v,
                     z: this.position.z
@@ -68,8 +68,8 @@ class Camera {
     }
 
     is_collide = (blocks, x, y, z) => {
-        let x_pos = Math.round(x - (x % 50));
-        let z_pos = Math.round(z - (z % 50));
+        let x_pos = Math.round((x) - (x % 50));
+        let z_pos = Math.round((z) - (z % 50));
         let y_pos = Math.round(y);
         
         let b = blocks.slice().find((v) => {

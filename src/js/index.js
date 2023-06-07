@@ -7,6 +7,7 @@ let ctx = canvas.getContext("2d");
 
 canvas.style.cursor = "none";
 
+let [ w, h ] = [document.documentElement.clientWidth, document.documentElement.clientHeight];
 let scene = new Scene(document.documentElement.clientWidth, document.documentElement.clientHeight, ctx);
 
 scene.camera.position.x = 200;
@@ -26,19 +27,34 @@ let rotation = {
     x: 0.17,
 }
 
+let pos = {
+    x: w * 0.5,
+    y: h * 0.5,
+}
+
 let mx = Math.PI / (scene.width * 0.5);
 let my = (Math.PI * 0.5) / (scene.height * 0.5);
 
+canvas.addEventListener("click", () => {
+    canvas.requestPointerLock({
+        unadjustedMovement: true,
+    });
+});
 
 canvas.addEventListener("mousemove", (e) => {
-    let x_mouse = (e.clientX - e.target.offsetLeft) - (scene.width * 0.5);
-    let y_mouse = (e.clientY - e.target.offsetTop) - (scene.height * 0.5);
+    const { movementX, movementY } = e;
 
-    rotation.x = (y_mouse * my);
-    rotation.y = -(x_mouse * mx);
+    let x = ((pos.x + movementX) % w);
+    let y = pos.y + movementY;
+    pos.x = (x < 0) ? w : x;
+    pos.y = (y < 0 || y > h) ? ((y > h) ? h : 0) : y;
+
+    rotation.x = (pos.y * my) - (Math.PI * 0.5);
+    rotation.y = -(pos.x * mx);
 });
 
 canvas.addEventListener("click", () => {
+    if (!scene.selected) return;
     const { block, face } = scene.selected;
     switch (face) {
         case 0:
@@ -101,8 +117,8 @@ setInterval(() => {
 
     scene.camera.rotation.y = rotation.y;
     scene.camera.rotation.x = rotation.x;
-//
-//
+
+
     scene.render();
     x_pos = Math.round(scene.camera.position.x - (scene.camera.position.x % 50));
     y_pos = Math.round(Math.abs(scene.camera.position.y));
@@ -117,3 +133,5 @@ setInterval(() => {
     ctx.fillText(`Z: ${y_pos - 90}`, 50, 150);
     ctx.closePath();
 }, 40);
+
+scene.render();

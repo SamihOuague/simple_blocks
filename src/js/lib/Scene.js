@@ -78,7 +78,7 @@ class Scene {
             const { x, y, z } = this.camera.position;
 
 
-            if ((x-p1.x) * n.x + (y-p1.y) * n.y + (z-p1.z) * n.z <= 0 && p1.z >= (this.camera.position.z - 50)) {
+            if ((x-p1.x) * n.x + (y-p1.y) * n.y + (z-p1.z) * n.z <= 0 && p1.z >= this.camera.position.z) {
                 this.projection.push({vertices: [vertices[face[0]],
                                                 vertices[face[1]],
                                                 vertices[face[2]],
@@ -121,18 +121,17 @@ class Scene {
             let tmp = this.camera.rotateX(this.camera.rotateY(v.vertices));
 
             return {...v, vertices: tmp};
+        }).filter((v) => {
+            return v.vertices[0].z > this.camera.position.z;
         });
 
         bl = bl.sort((a, b) => {
-            if (b.y == a.y) {
-                if (this.camera.position.z < b.z) return (b.z < a.z) ? -1 : 1;
-                else return (b.z > a.z) ? -1 : 1;
-            }
-            if (this.camera.position.y < (b.y + 40)) return (b.y < a.y) ? -1 : 1;
-            else return (b.y > a.y) ? -1 : 1;
+            //if (b.vertices[0].z < a.vertices[0].z) return a.vertices[0].x - b.vertices[0].x;
+            return b.vertices[0].z - a.vertices[0].z;
         });
 
         
+
         this.projection = [];
         this.selected = null;
         for (let i = 0; i < bl.length; i++) {

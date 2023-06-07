@@ -73,7 +73,8 @@ class Camera {
         let y_pos = Math.round(y);
         
         let b = blocks.slice().find((v) => {
-            return (v.x == x_pos && v.z == z_pos) && (v.y < (y_pos + 90) && v.y > y_pos);
+            return (v.x == x_pos && v.z == z_pos) 
+                    && ((v.y < (y_pos + 90) && v.y > y_pos) || ((v.y + 40) < (y_pos + 90) && (v.y + 40) > y_pos));
         });
 
         return (b) ? b : false;
@@ -116,10 +117,11 @@ class Camera {
 
         
 
-        if (bottom) {
-            this.position.y = bottom.y - 90;
-        } else {
+        if (!bottom) {
             this.position.y += this.velocity.y;
+        } else {
+            if (this.velocity.y == 0) this.position.y = bottom.y - 90;
+            else this.velocity.y = 2;
         }
     }
 }

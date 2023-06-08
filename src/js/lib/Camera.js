@@ -68,12 +68,12 @@ class Camera {
     }
 
     is_collide = (blocks, x, y, z) => {
-        let x_pos = Math.round((x) - (x % 50));
-        let z_pos = Math.round((z) - (z % 50));
+        
+        let x_pos = Math.round(x - (x % 50));
         let y_pos = Math.round(y);
         
         let b = blocks.slice().find((v) => {
-            return (v.x == x_pos && v.z == z_pos) 
+            return ((v.x <= x + 15 && v.x + 50 >= x - 15) && (v.z <= z + 15 && v.z + 50 >= z - 15)) 
                     && ((v.y < (y_pos + 90) && v.y > y_pos) || ((v.y + 40) < (y_pos + 90) && (v.y + 40) > y_pos));
         });
 
@@ -104,6 +104,7 @@ class Camera {
         let v_z = n_cam_zz + n_cam_xx;
 
         let z_col = this.is_collide(blocks, this.position.x, this.position.y, this.position.z + v_z);
+                    
         let x_col = this.is_collide(blocks, this.position.x + v_x, this.position.y, this.position.z);
 
         this.position.z += (!z_col) ? v_z: 0;

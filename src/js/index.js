@@ -37,6 +37,8 @@ let my = (Math.PI * 0.5) / (scene.height * 0.5);
 
 let [ x_pos, y_pos, z_pos ] = Array(3);
 
+
+
 canvas.addEventListener("click", () => {
     canvas.requestPointerLock({
         unadjustedMovement: true,
@@ -55,39 +57,43 @@ canvas.addEventListener("mousemove", (e) => {
     rotation.y = -(pos.x * mx);
 });
 
-canvas.addEventListener("click", () => {
+canvas.addEventListener("mousedown", (e) => {
     if (!scene.selected) return;
     const { block, face } = scene.selected;
-    switch (face) {
-        case 0:
-            if ((block.x != x_pos || block.z - 50 != z_pos) || -(y_pos - 90) < block.y - 50) {
-                scene.add_block(block.x, block.y, block.z - 50);
-            }
-            break;
-        case 1:
-            if ((block.x != x_pos || block.z != z_pos) || -(y_pos - 90) < block.y - 50) {
-                scene.add_block(block.x, block.y - 50, block.z);
-            }
-            break;
-        case 2:
-            if ((block.x + 50 != x_pos || block.z != z_pos) || -(y_pos - 90) < block.y - 50) {
-                scene.add_block(block.x + 50, block.y, block.z);
-            }
-            break;
-        case 3:
-            scene.add_block(block.x, block.y + 50, block.z);
-            break;
-        case 4:
-            if ((block.x - 50 != x_pos || block.z != z_pos) || -(y_pos - 90) < block.y - 50) {
-                scene.add_block(block.x - 50, block.y, block.z);
-            }
-            break;
-        case 5:
-            if ((block.x != x_pos || block.z + 50 != z_pos) || -(y_pos - 90) < block.y - 50) {
-                scene.add_block(block.x, block.y, block.z + 50);
-            }
-            break;
-    }
+    
+    if (e.buttons == 1)
+        switch (face) {
+            case 0:
+                if ((block.x != x_pos || block.z - 50 != z_pos) || -(y_pos - 90) < block.y - 50) {
+                    scene.add_block(block.x, block.y, block.z - 50);
+                }
+                break;
+            case 1:
+                if ((block.x != x_pos || block.z != z_pos) || -(y_pos - 90) < block.y - 50) {
+                    scene.add_block(block.x, block.y - 50, block.z);
+                }
+                break;
+            case 2:
+                if ((block.x + 50 != x_pos || block.z != z_pos) || -(y_pos - 90) < block.y - 50) {
+                    scene.add_block(block.x + 50, block.y, block.z);
+                }
+                break;
+            case 3:
+                scene.add_block(block.x, block.y + 50, block.z);
+                break;
+            case 4:
+                if ((block.x - 50 != x_pos || block.z != z_pos) || -(y_pos - 90) < block.y - 50) {
+                    scene.add_block(block.x - 50, block.y, block.z);
+                }
+                break;
+            case 5:
+                if ((block.x != x_pos || block.z + 50 != z_pos) || -(y_pos - 90) < block.y - 50) {
+                    scene.add_block(block.x, block.y, block.z + 50);
+                }
+                break;
+        } else if (e.buttons == 2) {
+            scene.remove_block(block.x, block.y, block.z);
+        }
 });
 
 window.addEventListener("keydown", (e) => {

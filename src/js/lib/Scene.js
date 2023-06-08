@@ -32,11 +32,17 @@ class Scene {
     }
 
     add_block = (x, y, z, size = 50) => {
-        const { position } = this.camera;
         let block = new Block(x, y, z, size);        
         this.blocks.push(block);
         this.update_neighbour();
         
+    }
+
+    remove_block = (x, y, z) => {
+        this.blocks = this.blocks.filter((v) => {
+            return !(x == v.x && y == v.y && z == v.z);
+        });
+        this.update_neighbour();
     }
 
     draw_face = (face, color = "#005f00") => {
@@ -130,7 +136,6 @@ class Scene {
             return v.vertices[0].z > this.camera.position.z;
         });
 
-        console.log(pos_x, pos_y);
         bl = bl.sort((a, b) => {
             if (pos_y < a.y || pos_y < b.y) return (a.y < b.y) ? 1 : -1;
             else return (a.y > b.y) ? 1 : -1;

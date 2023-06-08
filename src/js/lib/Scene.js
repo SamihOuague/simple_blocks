@@ -31,10 +31,12 @@ class Scene {
         }
     }
 
-    add_block = (x, y, z) => {
-        let block = new Block(x, y, z, 50);
+    add_block = (x, y, z, size = 50) => {
+        const { position } = this.camera;
+        let block = new Block(x, y, z, size);        
         this.blocks.push(block);
         this.update_neighbour();
+        
     }
 
     draw_face = (face, color = "#005f00") => {
@@ -56,9 +58,8 @@ class Scene {
         let vertices = this.camera.project(block.vertices, w, h);
 
         for (let i = 0; i < block.faces.length; i++) {
-            let color = "#005f00";
             let face = block.faces[i];
-    
+
             if ((i == 0 && block.neighbours.north)
                 || (i == 1 && block.neighbours.top)  
                 || (i == 2 && block.neighbours.east)
@@ -113,6 +114,10 @@ class Scene {
     }
 
     render = () => {
+        let pos_x = this.camera.position.x - (this.camera.position.x % 50);
+        let pos_y = this.camera.position.y - (this.camera.position.y % 50) - 50;
+        let pos_z = this.camera.position.z - (this.camera.position.z % 50);
+
         this.ctx.clearRect(0, 0, this.width, this.height);
         this.camera.update_position(this.blocks, this.width * 0.5, this.height * 0.5);
         
@@ -125,9 +130,26 @@ class Scene {
             return v.vertices[0].z > this.camera.position.z;
         });
 
+        console.log(pos_x, pos_y);
         bl = bl.sort((a, b) => {
-            //if (b.vertices[0].z < a.vertices[0].z) return a.vertices[0].x - b.vertices[0].x;
-            return b.vertices[0].z - a.vertices[0].z;
+            if (pos_y < a.y || pos_y < b.y) return (a.y < b.y) ? 1 : -1;
+            else return (a.y > b.y) ? 1 : -1;
+        }).sort((a, b) => {
+            if (a.y == b.y) {
+                if (b.z > pos_z || a.z > pos_z) {
+                    return b.z - a.z;
+                } else {
+                    return a.z - b.z;
+                }
+            }
+        }).sort((a, b) => {
+            if (a.y == b.y && b.z == a.z) {
+                if (a.x > pos_x || b.x > pos_x) {
+                    return b.x - a.x;
+                } else {
+                    return a.x - b.x;
+                }
+            }
         });
 
         

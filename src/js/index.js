@@ -35,6 +35,8 @@ let pos = {
 let mx = Math.PI / (scene.width * 0.5);
 let my = (Math.PI * 0.5) / (scene.height * 0.5);
 
+let [ x_pos, y_pos, z_pos ] = Array(3);
+
 canvas.addEventListener("click", () => {
     canvas.requestPointerLock({
         unadjustedMovement: true,
@@ -58,22 +60,32 @@ canvas.addEventListener("click", () => {
     const { block, face } = scene.selected;
     switch (face) {
         case 0:
-            scene.add_block(block.x, block.y, block.z - 50);
+            if ((block.x != x_pos || block.z - 50 != z_pos) || -(y_pos - 90) < block.y - 50) {
+                scene.add_block(block.x, block.y, block.z - 50);
+            }
             break;
         case 1:
-            scene.add_block(block.x, block.y - 50, block.z);
+            if ((block.x != x_pos || block.z != z_pos) || -(y_pos - 90) < block.y - 50) {
+                scene.add_block(block.x, block.y - 50, block.z);
+            }
             break;
         case 2:
-            scene.add_block(block.x + 50, block.y, block.z);
+            if ((block.x + 50 != x_pos || block.z != z_pos) || -(y_pos - 90) < block.y - 50) {
+                scene.add_block(block.x + 50, block.y, block.z);
+            }
             break;
         case 3:
             scene.add_block(block.x, block.y + 50, block.z);
             break;
         case 4:
-            scene.add_block(block.x - 50, block.y, block.z);
+            if ((block.x - 50 != x_pos || block.z != z_pos) || -(y_pos - 90) < block.y - 50) {
+                scene.add_block(block.x - 50, block.y, block.z);
+            }
             break;
         case 5:
-            scene.add_block(block.x, block.y, block.z + 50);
+            if ((block.x != x_pos || block.z + 50 != z_pos) || -(y_pos - 90) < block.y - 50) {
+                scene.add_block(block.x, block.y, block.z + 50);
+            }
             break;
     }
 });
@@ -102,7 +114,7 @@ for (let i = 2; i < 12; i++) {
     for (let j = 2; j < 12; j++) scene.add_block(i * 50, 0, j * 50);
 }
 
-let [ x_pos, y_pos, z_pos ] = Array(3);
+
 
 setInterval(() => {
     if (controls.front) scene.camera.velocity.z = 5;

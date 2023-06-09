@@ -31,8 +31,9 @@ class Scene {
         }
     }
 
-    add_block = (x, y, z, size = 50) => {
-        let block = new Block(x, y, z, size);        
+    add_block = (x, y, z, color = "#005f00", size = 50) => {
+        let block = new Block(x, y, z, size);   
+        block.color = color;     
         this.blocks.push(block);
         this.update_neighbour();
         
@@ -89,7 +90,7 @@ class Scene {
                 this.projection.push({vertices: [vertices[face[0]],
                                                 vertices[face[1]],
                                                 vertices[face[2]],
-                                                vertices[face[3]]]});
+                                                vertices[face[3]]], color: block.color});
 
                 if (this.is_center(vertices, face)) {
                     this.selected = { block, face: i, i: this.projection.length - 1 };
@@ -170,7 +171,7 @@ class Scene {
         for (let i = 0; i < this.projection.length; i++) {
             let project = this.projection[i];
             
-            this.draw_face(project.vertices, (this.selected && this.selected.i == i) ? "#0000ff": "#005f00");
+            this.draw_face(project.vertices, (this.selected && this.selected.i == i) ? project.color: project.color);
         }
         
         this.ctx.fillStyle = "#000000";

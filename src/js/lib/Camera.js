@@ -68,8 +68,6 @@ class Camera {
     }
 
     is_collide = (blocks, x, y, z) => {
-        
-        let x_pos = Math.round(x - (x % 50));
         let y_pos = Math.round(y);
         
         let b = blocks.slice().find((v) => {

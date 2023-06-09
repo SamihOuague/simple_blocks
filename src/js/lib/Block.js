@@ -4,7 +4,8 @@ import { Vector3D } from "./Vector";
 class Block {
     constructor(x, y, z, size = 50) {
         Vector3D.call(this, x, y, z);
-        
+        this.color = "#005f00";
+
         this.vertices = [new Vector3D(x, y, z),
             new Vector3D(x + size, y, z),
             new Vector3D(x + size, y + size, z),

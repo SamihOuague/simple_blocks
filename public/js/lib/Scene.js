@@ -1,5 +1,6 @@
 import { Vector2D, Vector3D } from "./Vector";
 import Camera from "./Camera";
+import Block from "./Block";
 
 class Scene {
     constructor(w, h, ctx) {
@@ -14,7 +15,85 @@ class Scene {
         this.projection = [];
         this.selected = null;
     }
+
+    delete_block = () => {
+        if (!this.selected) return;
+        const { block } = this.selected;
+
+        let worker = new Worker("./js/utils/generator.js");
+
+        worker.addEventListener("message", (message) => {
+            const { blocks } = message.data;
+            if (message.data.update) {
+                worker.postMessage({
+                    command: "update",
+                    block: block,
+                    blocks: blocks,
+                });
+            } else if (Array.isArray(message.data)) {
+                this.blocks = message.data;
+            }
+        });
+
+        worker.postMessage({
+            command: "remove",
+            blocks: this.blocks,
+            block: block,
+        });
+    }
     
+    add_block = (color = "#efefef") => {
+        if (!this.selected) return;
+        const { block, face } = this.selected;
+        const { position } = this.camera;
+        let new_block = new Block(block.x, block.y, block.z);
+
+        let worker = new Worker("./js/utils/generator.js");
+
+        worker.addEventListener("message", (message) => {
+            const { block } = message.data;
+            if (message.data.update) {
+                worker.postMessage({
+                    command: "update",
+                    block: block,
+                    blocks: [...this.blocks, block],
+                });
+            } else if (Array.isArray(message.data)) {
+                this.blocks = message.data;
+            }
+        });
+
+        switch (face) {
+            case 0:
+                new_block.z += -50;
+                break;
+            case 1:
+                new_block.y += -50;
+                break;
+            case 2:
+                new_block.x += 50;
+                break;
+            case 3:
+                new_block.y += 50;
+                break;
+            case 4:
+                new_block.x += -50;
+                break;
+            case 5:
+                new_block.z += 50;
+                break;
+        }
+
+        if (!this.camera.is_collide([new_block], position.x, position.y, position.z)) {
+            new_block = new Block(new_block.x, new_block.y, new_block.z);
+            new_block.color = color;
+            worker.postMessage({
+                command: "add",
+                blocks: this.blocks,
+                block: new_block,
+            });
+        }
+    }
 
     draw_face = (face, color = "#005f00") => {
         this.ctx.beginPath();
@@ -33,8 +112,6 @@ class Scene {
         let w = (this.width * 0.5);
         let h = (this.height * 0.5);
         let vertices = this.camera.project(block.vertices, w, h);
-
-        let blocks = this.blocks;
         
         for (let i = 0; i < block.faces.length; i++) {
             let face = block.faces[i];
@@ -73,7 +150,37 @@ class Scene {
             }
         }
     }
-
+    generate_world = () => {
+        let worker = new Worker("./js/utils/generator.js");
+        let n = 34;
+    
+        worker.addEventListener("message", (message) => {
+            const { block, blocks } = message.data;
+            if (message.data.update) {
+                worker.postMessage({
+                    command: "update",
+                    block: block,
+                    blocks: [...this.blocks, block],
+                });
+            } else {
+                this.blocks = [...this.blocks.filter((v) => {
+                    return this.blocks.find((r) => r.x == v.x && r.y == v.y && r.z == v.z);
+                }), ...message.data];
+            }
+        });
+    
+        for (let i = 2; i < n; i++) {
+            for (let j = 2; j < n; j++) {
+                let block = new Block(i * 50, 0, j * 50);
+                block.color = "#2e2e2e";
+                worker.postMessage({
+                    command: "add",
+                    block: block,
+                    blocks: [...this.blocks],
+                });
+            }
+        }
+    }
     is_center = (vertices, face) => {
         let lines = [[1, 2], [0, 3], [0, 1], [3, 2]];
         let counter = 0;

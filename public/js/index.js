@@ -12,40 +12,6 @@ scene.camera.position.x = 200;
 scene.camera.position.y = -90;
 scene.camera.position.z = 200;
 
-let worker = new Worker("./js/utils/generator.js");
-
-worker.addEventListener("message", (message) => {
-    if (message.data.update) {
-        scene.blocks = message.data.blocks;
-        worker.postMessage({
-            command: "update",
-            blocks: scene.blocks,
-        });
-    } else if (Array.isArray(message.data)) {
-        scene.blocks = message.data;
-    } else {
-        scene.blocks = [...scene.blocks, message.data];
-        worker.postMessage({
-            command: "update",
-            blocks: scene.blocks,
-        });
-    }
-});
-
-let n = 28;
-
-let inter = setInterval(function () {
-    if (scene.blocks.length >= (n-2) * (n-2)) {
-        worker.postMessage({
-            command: "update",
-            blocks: scene.blocks,
-        });
-        
-        clearInterval(inter);
-    }
-}, 100);
-
-
 
 let controls = {
     left: false,
@@ -65,18 +31,8 @@ let pos = {
     y: h * 0.5,
 }
 
+scene.generate_world();
 
-for (let i = 2; i < n; i++) {
-    for (let j = 2; j < n; j++) {
-        let block = new Block(i * 50, 0, j * 50);
-        block.color = "#2e2e2e";
-        worker.postMessage({
-            command: "add",
-            block: block,
-            blocks: [...scene.blocks],
-        });
-    }
-}
 
 let mx = Math.PI / (scene.width * 0.5);
 let my = (Math.PI * 0.5) / (scene.height * 0.5);
@@ -144,48 +100,13 @@ let select_color = (e) => {
 }
 
 const mouse_down = (e) => {
-    if (!scene.selected) return;
-    const { block, face } = scene.selected;
-    const { position } = scene.camera;
-    let new_block = new Block(block.x, block.y, block.z);
+
 
     if (e.buttons == 1) {
-        switch (face) {
-            case 0:
-                new_block.z += -50;
-                break;
-            case 1:
-                new_block.y += -50;
-                break;
-            case 2:
-                new_block.x += 50;
-                break;
-            case 3:
-                new_block.y += 50;
-                break;
-            case 4:
-                new_block.x += -50;
-                break;
-            case 5:
-                new_block.z += 50;
-                break;
-        }
-
-        if (!scene.camera.is_collide([new_block], position.x, position.y, position.z)) {
-            new_block.color = colors[selected_color];
-            let l = scene.blocks.length;
-            worker.postMessage({
-                command: "add",
-                blocks: scene.blocks,
-                block: new_block,
-            });
-        }
+        scene.add_block(colors[selected_color]);
     } else if (e.buttons == 2) {
-        worker.postMessage({
-            command: "remove",
-            blocks: scene.blocks,
-            block: block,
-        });
+        scene.delete_block();
+        
     }
 }
 
@@ -249,7 +170,7 @@ function play() {
     document.addEventListener("wheel", select_color);
 
     
-    animation = setInterval(update_scene, 35);
+    animation = setInterval(update_scene, 40);
 }
 
 ctx.beginPath();

@@ -31,7 +31,7 @@ let pos = {
     y: h * 0.5,
 }
 
-scene.generate_world();
+scene.generate_world(4);
 
 
 let mx = Math.PI / (scene.width * 0.5);
@@ -110,53 +110,69 @@ const mouse_down = (e) => {
     }
 }
 
-let update_scene = () => {
-    
-    if (controls.front) scene.camera.velocity.z = 5;
-    else if (controls.back) scene.camera.velocity.z = -5;
-    else scene.camera.velocity.z = 0;
+let animation = null;
+let start = null;
 
-    if (controls.right) scene.camera.velocity.x = 5;
-    else if (controls.left) scene.camera.velocity.x = -5;
-    else scene.camera.velocity.x = 0;
+let update_scene = (timeStamp) => {
+    if (start == null) {
+        start = timeStamp;
+    }
 
-    if (controls.jump && scene.camera.velocity.y == 0) scene.camera.velocity.y = -17;
+    if ((timeStamp - start) > 30) {
+        if (controls.front) scene.camera.velocity.z = 5;
+        else if (controls.back) scene.camera.velocity.z = -5;
+        else scene.camera.velocity.z = 0;
 
-    scene.camera.rotation.y = rotation.y;
-    scene.camera.rotation.x = rotation.x;
+        if (controls.right) scene.camera.velocity.x = 5;
+        else if (controls.left) scene.camera.velocity.x = -5;
+        else scene.camera.velocity.x = 0;
+
+        if (controls.jump && scene.camera.velocity.y == 0) scene.camera.velocity.y = -17;
+
+        scene.camera.rotation.y = rotation.y;
+        scene.camera.rotation.x = rotation.x;
 
 
-    
-    scene.render();
-    
 
-    x_pos = Math.round(scene.camera.position.x - (scene.camera.position.x % 50));
-    y_pos = Math.round(Math.abs(scene.camera.position.y));
-    z_pos = Math.round(scene.camera.position.z - (scene.camera.position.z % 50));
+        scene.render();
 
-    ctx.beginPath();
-    ctx.fillStyle = "#00ff00";
-    ctx.font = "20px monospace";
 
-    ctx.fillText(`X: ${x_pos}`, 50, 50);
-    ctx.fillText(`Y: ${z_pos}`, 50, 100);
-    ctx.fillText(`Z: ${y_pos - 90}`, 50, 150);
-    
-    ctx.closePath();
-    draw_color_select();
+        x_pos = Math.round(scene.camera.position.x - (scene.camera.position.x % 50));
+        y_pos = Math.round(Math.abs(scene.camera.position.y));
+        z_pos = Math.round(scene.camera.position.z - (scene.camera.position.z % 50));
+
+        ctx.beginPath();
+        ctx.fillStyle = "#00ff00";
+        ctx.font = "20px monospace";
+
+        ctx.fillText(`X: ${x_pos}`, 50, 50);
+        ctx.fillText(`Y: ${z_pos}`, 50, 100);
+        ctx.fillText(`Z: ${y_pos - 90}`, 50, 150);
+
+        ctx.closePath();
+        draw_color_select();
+        start = timeStamp;
+    }
+
     if (scene.camera.position.y > 1000) {
         scene.camera.position.x = 200;
         scene.camera.position.y = -1000;
         scene.camera.position.z = 200;
     }
     
+    if (animation) {
+        window.requestAnimationFrame(update_scene);
+    }
+    else {
+        ctx.beginPath();
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = "#00ff00";
+        ctx.font = "20px monospace";
+        
+        ctx.fillText("CLICK TO PLAY", w * 0.5 - 100, h * 0.5 - 50);
+        ctx.closePath();
+    }
 }
-
-
-
-
-
-let animation = null;
 
 function play() {
     canvas.addEventListener("mousemove", rotation_control);
@@ -170,7 +186,9 @@ function play() {
     document.addEventListener("wheel", select_color);
 
     
-    animation = setInterval(update_scene, 40);
+    animation = true;
+
+    window.requestAnimationFrame(update_scene);
 }
 
 ctx.beginPath();
@@ -196,16 +214,8 @@ document.addEventListener("pointerlockchange", (e) => {
     } else {
         canvas.addEventListener("click", play_trigger);
         canvas.style.cursor = "pointer";
-        ctx.beginPath();
-        ctx.clearRect(0, 0, w, h);
-        ctx.fillStyle = "#00ff00";
-        ctx.font = "20px monospace";
-
-        ctx.fillText("CLICK TO PLAY", w * 0.5 - 100, h * 0.5 - 50);
-        ctx.closePath();
         
-        clearInterval(animation);
-        animation = null;
+        animation = false;
         canvas.removeEventListener("mousemove", rotation_control);
         canvas.removeEventListener("mousedown", mouse_down);
         window.removeEventListener("keydown", controls_down);

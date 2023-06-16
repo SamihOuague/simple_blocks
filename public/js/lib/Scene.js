@@ -41,7 +41,7 @@ class Scene {
             block: block,
         });
     }
-    
+
     add_block = (color = "#efefef") => {
         if (!this.selected) return;
         const { block, face } = this.selected;
@@ -99,10 +99,13 @@ class Scene {
         this.ctx.beginPath();
         this.ctx.fillStyle = color;
         this.ctx.strokeStyle = "#ffffff";
-        this.ctx.moveTo(face[0].x, face[0].y);
-        this.ctx.lineTo(face[1].x, face[1].y);
-        this.ctx.lineTo(face[2].x, face[2].y);
-        this.ctx.lineTo(face[3].x, face[3].y);
+        for (let i = 0; i < face.length; i++) {
+            if (i == 0) {
+                this.ctx.moveTo(face[i].x, face[i].y);
+            } else {
+                this.ctx.lineTo(face[i].x, face[i].y);
+            }
+        }
         this.ctx.closePath();
         this.ctx.fill();
         this.ctx.stroke();
@@ -112,17 +115,18 @@ class Scene {
         let w = (this.width * 0.5);
         let h = (this.height * 0.5);
         let vertices = this.camera.project(block.vertices, w, h);
-        
+        let { position } = this.camera;
+
         for (let i = 0; i < block.faces.length; i++) {
             let face = block.faces[i];
-            
+
             if ((i == 0 && block.neighbours.south)
-                    || (i == 1 && block.neighbours.bottom)
-                    || (i == 2 && block.neighbours.east)
-                    || (i == 3 && block.neighbours.top)
-                    || (i == 4 && block.neighbours.west)
-                    || (i == 5 && block.neighbours.north)) {
-                        
+                || (i == 1 && block.neighbours.bottom)
+                || (i == 2 && block.neighbours.east)
+                || (i == 3 && block.neighbours.top)
+                || (i == 4 && block.neighbours.west)
+                || (i == 5 && block.neighbours.north)) {
+
                 continue;
             }
 
@@ -132,17 +136,20 @@ class Scene {
 
             let v1 = new Vector3D(p2.x - p1.x, p2.y - p1.y, p2.z - p1.z);
             let v2 = new Vector3D(p3.x - p1.x, p3.y - p1.y, p3.z - p1.z);
-    
+
             let n = new Vector3D(v1.y * v2.z - v2.y * v1.z, v1.z * v2.x - v2.z * v1.x, v1.x * v2.y - v1.y * v2.x);
-            
-            const { x, y, z } = this.camera.position;
+
+            const { x, y, z } = position;
 
 
-            if ((x-p1.x) * n.x + (y-p1.y) * n.y + (z-p1.z) * n.z <= 0 && p1.z >= this.camera.position.z) {
-                this.projection.push({vertices: [vertices[face[0]],
-                                                vertices[face[1]],
-                                                vertices[face[2]],
-                                                vertices[face[3]]], color: block.color});
+            if ((x - p1.x) * n.x + (y - p1.y) * n.y + (z - p1.z) * n.z <= 0
+                && (p1.z >= z || p2.z > z || p3.z > z)) {
+                this.projection.push({
+                    vertices: [vertices[face[0]],
+                    vertices[face[1]],
+                    vertices[face[2]],
+                    vertices[face[3]]], color: block.color
+                });
 
                 if (this.is_center(vertices, face)) {
                     this.selected = { block, face: i, i: this.projection.length - 1 };
@@ -150,10 +157,10 @@ class Scene {
             }
         }
     }
-    generate_world = () => {
+    generate_world = (size = 32) => {
         let worker = new Worker("./js/utils/generator.js");
-        let n = 34;
-    
+        let n = size;
+
         worker.addEventListener("message", (message) => {
             const { block, blocks } = message.data;
             if (message.data.update) {
@@ -168,9 +175,9 @@ class Scene {
                 }), ...message.data];
             }
         });
-    
-        for (let i = 2; i < n; i++) {
-            for (let j = 2; j < n; j++) {
+
+        for (let i = 0; i < n; i++) {
+            for (let j = 0; j < n; j++) {
                 let block = new Block(i * 50, 0, j * 50);
                 block.color = "#2e2e2e";
                 worker.postMessage({
@@ -181,6 +188,7 @@ class Scene {
             }
         }
     }
+
     is_center = (vertices, face) => {
         let lines = [[1, 2], [0, 3], [0, 1], [3, 2]];
         let counter = 0;
@@ -189,8 +197,8 @@ class Scene {
             let v1 = vertices[face[line[0]]];
             let v2 = vertices[face[line[1]]];
 
-            v1 = new Vector2D((this.width*0.5) - v1.x, (this.height*0.5) - v1.y);
-            v2 = new Vector2D(v2.x - (this.width*0.5), v2.y - (this.height*0.5));
+            v1 = new Vector2D((this.width * 0.5) - v1.x, (this.height * 0.5) - v1.y);
+            v2 = new Vector2D(v2.x - (this.width * 0.5), v2.y - (this.height * 0.5));
 
             let n = (v2.x * v1.y) - (v1.x * v2.y);
 
@@ -214,9 +222,14 @@ class Scene {
         let bl = this.blocks.slice().map((v) => {
             let tmp = this.camera.rotateX(this.camera.rotateY(v.vertices));
 
-            return {...v, vertices: tmp};
+            return { ...v, vertices: tmp };
         }).filter((v) => {
-            return v.vertices[0].z > this.camera.position.z;
+            return (() => {
+                for (let i = 0; i < v.vertices.length; i++) {
+                    if (v.vertices[i].z > this.camera.position.z) return true;
+                }
+                return false;
+            })();
         });
 
         bl = bl.sort((a, b) => {
@@ -241,12 +254,11 @@ class Scene {
             }
         });
 
-        
-        
         this.projection = [];
         this.selected = null;
         for (let i = 0; i < bl.length; i++) {
             let block = bl[i];
+
             this.project_block(block);
         }
 
@@ -254,19 +266,27 @@ class Scene {
         for (let i = 0; i < this.projection.length; i++) {
             let project = this.projection[i];
             let c = project.color;
+
             if (this.selected && this.selected.i == i) {
-                c = "#" + [project.color.slice(1, 3), 
-                        project.color.slice(3, 5), 
-                        project.color.slice(5, 7)].map((v) => (parseInt(v, 16) + 20 < 255) ? (parseInt(v, 16) + 20).toString(16) : "ff").join('');
+                c = "#" + [project.color.slice(1, 3),
+                project.color.slice(3, 5),
+                project.color.slice(5, 7)].map((v) => {
+                    return (parseInt(v, 16) + 20 < 255) ? (parseInt(v, 16) + 20).toString(16) : "ff";
+                }).join('');
             }
-            
+
             this.draw_face(project.vertices, c);
         }
+
+       
+
         
+        
+
         this.ctx.fillStyle = "#000000";
         this.ctx.fillRect((this.width * 0.5) - 2, (this.height * 0.5) - 15, 4, 30);
         this.ctx.fillRect((this.width * 0.5) - 15, (this.height * 0.5) - 2, 30, 4);
-        
+
     }
 }
 

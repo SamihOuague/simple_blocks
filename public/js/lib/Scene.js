@@ -9,7 +9,7 @@ class Scene {
         this.width = w;
         this.height = h;
         this.ctx = ctx;
-        this.camera = new Camera(0, 0, 0, (this.width * 0.5));
+        this.camera = new Camera(0, 0, 0, this.width * 0.5);
         this.ctx.canvas.width = w;
         this.ctx.canvas.height = h;
         this.projection = [];
@@ -99,11 +99,15 @@ class Scene {
         this.ctx.beginPath();
         this.ctx.fillStyle = color;
         this.ctx.strokeStyle = "#ffffff";
+        
+        face = this.camera.project(face, this.width, this.height);
+
         for (let i = 0; i < face.length; i++) {
+            let { x, y, z, w } = face[i];
             if (i == 0) {
-                this.ctx.moveTo(face[i].x, face[i].y);
+                this.ctx.moveTo(x, y);
             } else {
-                this.ctx.lineTo(face[i].x, face[i].y);
+                this.ctx.lineTo(x, y);
             }
         }
         this.ctx.closePath();
@@ -112,8 +116,8 @@ class Scene {
     }
 
     project_block = (block) => {
-        let w = (this.width * 0.5);
-        let h = (this.height * 0.5);
+        let w = this.width;
+        let h = this.height;
         let vertices = this.camera.project(block.vertices, w, h);
         let { position } = this.camera;
 
@@ -141,16 +145,17 @@ class Scene {
 
             const { x, y, z } = position;
 
+            let n_vert = [block.vertices[face[0]],
+                            block.vertices[face[1]],
+                            block.vertices[face[2]],
+                            block.vertices[face[3]]];
 
-            if ((x - p1.x) * n.x + (y - p1.y) * n.y + (z - p1.z) * n.z <= 0
-                && (p1.z >= z || p2.z > z || p3.z > z)) {
+            if ((x - p1.x) * n.x + (y - p1.y) * n.y + (z - p1.z) * n.z <= 0) {
                 this.projection.push({
-                    vertices: [vertices[face[0]],
-                    vertices[face[1]],
-                    vertices[face[2]],
-                    vertices[face[3]]], color: block.color
+                    vertices: n_vert, 
+                    color: block.color
                 });
-
+                
                 if (this.is_center(vertices, face)) {
                     this.selected = { block, face: i, i: this.projection.length - 1 };
                 }
@@ -197,6 +202,7 @@ class Scene {
             let v1 = vertices[face[line[0]]];
             let v2 = vertices[face[line[1]]];
 
+            if (!v1 || !v2) return 0;
             v1 = new Vector2D((this.width * 0.5) - v1.x, (this.height * 0.5) - v1.y);
             v2 = new Vector2D(v2.x - (this.width * 0.5), v2.y - (this.height * 0.5));
 
@@ -219,18 +225,7 @@ class Scene {
         this.camera.update_position(this.blocks, this.width * 0.5, this.height * 0.5);
         
 
-        let bl = this.blocks.slice().map((v) => {
-            let tmp = this.camera.rotateX(this.camera.rotateY(v.vertices));
-
-            return { ...v, vertices: tmp };
-        }).filter((v) => {
-            return (() => {
-                for (let i = 0; i < v.vertices.length; i++) {
-                    if (v.vertices[i].z > this.camera.position.z) return true;
-                }
-                return false;
-            })();
-        });
+        let bl = this.blocks.slice();
 
         bl = bl.sort((a, b) => {
             if (a.y == b.y) return 0;
@@ -274,14 +269,9 @@ class Scene {
                     return (parseInt(v, 16) + 20 < 255) ? (parseInt(v, 16) + 20).toString(16) : "ff";
                 }).join('');
             }
-
+            
             this.draw_face(project.vertices, c);
         }
-
-       
-
-        
-        
 
         this.ctx.fillStyle = "#000000";
         this.ctx.fillRect((this.width * 0.5) - 2, (this.height * 0.5) - 15, 4, 30);

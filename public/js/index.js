@@ -31,7 +31,7 @@ let pos = {
     y: h * 0.5,
 }
 
-scene.generate_world(4);
+scene.generate_world(12);
 
 
 let mx = Math.PI / (scene.width * 0.5);

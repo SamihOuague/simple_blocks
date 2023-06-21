@@ -13,74 +13,116 @@ class Camera {
         return Math.round((z * (vector.x / vector.z)) * 10) / 10;
     }
 
-    compute_y = (vector, x) => {
-        if (!vector.x) return vector.y;
-        return Math.round((x * (vector.y / vector.x)) * 10) / 10;
+    compute_y = (vector, z) => {
+        if (!vector.z) return vector.y;
+        return Math.round((z * (vector.y / vector.z)) * 10) / 10;
     }
 
-    vector_clip = (vectors) => {
-        let new_vectors = [];
+    compute_radian = (deg) => {
+        return deg * (Math.PI / 180);
+    }
+
+    depth_clip = (vectors) => {
+        let n_v = [];
+        
         for (let i = 0; i < vectors.length; i++) {
-            let p1;
-            let p2;
+            
+            let vector = vectors[i];
+            let next = (i != vectors.length - 1) ? vectors[i+1] : vectors[0];
+            let prev = (i != 0) ? vectors[i-1] : vectors[vectors.length-1];
 
-            if (i == 0) {
-                p1 = vectors[vectors.length - 1];
-                p2 = vectors[i + 1];
-            } else if (i == (vectors.length - 1)) {
-                p1 = vectors[i - 1];
-                p2 = vectors[0];
-            } else {
-                p1 = vectors[i - 1];
-                p2 = vectors[i + 1];
-            }
-
-            let line = [
-                new Vector3D(Math.abs(vectors[i].x - p1.x), Math.abs(vectors[i].y - p1.y), Math.abs(vectors[i].z - p1.z)),
-                new Vector3D(Math.abs(vectors[i].x - p2.x), Math.abs(vectors[i].y - p2.y), Math.abs(vectors[i].z - p2.z)),
+            let [ xn, yn, zn ] = [
+                next.x - this.position.x,
+                next.y - this.position.y, 
+                next.z - this.position.z,
             ];
 
-            let n_x = this.compute_x(line[0], Math.abs(vectors[i].z - this.position.z)) ;
-            let n2_x = this.compute_x(line[1], Math.abs(vectors[i].z - this.position.z));
-            
-            //let n_y = this.compute_y(line[0], Math.abs(vectors[i].x + n_x)) * ((vectors[i].x + n_x < p1.x) ? 1 : -1);
-            //let n2_y = this.compute_y(line[1], Math.abs(vectors[i].x + n2_x)) * ((vectors[i].x + n2_x < p2.x) ? 1 : -1);
+            let [ xp, yp, zp ] = [
+                prev.x - this.position.x,
+                prev.y - this.position.y,
+                prev.z - this.position.z,
+            ];
 
-            if (vectors[i].z < this.position.z) {
-                if (p1.z > this.position.z && p2.z > this.position.z) {
-                    new_vectors = [...new_vectors, 
-                        new Vector3D(vectors[i].x + n_x, vectors[i].y, this.position.z),
-                        new Vector3D(vectors[i].x + n2_x, vectors[i].y, this.position.z),
+            let [ x, y, z ] = [
+                vector.x - this.position.x,
+                vector.y - this.position.y,
+                vector.z - this.position.z,
+            ];
+
+            let lines = [
+                new Vector3D(Math.abs(x - xn), Math.abs(y - yn), Math.abs(z - zn)),
+                new Vector3D(Math.abs(x - xp), Math.abs(y - yp), Math.abs(z - zp)),
+            ];
+
+            if (z < 0) {
+                let fx = this.compute_x(lines[0], Math.abs(z)) * ((xn > x) ? 1 : -1);
+                let sx = this.compute_x(lines[1], Math.abs(z)) * ((xp > x) ? 1 : -1);
+
+                let fy = this.compute_y(lines[0], Math.abs(z)) * ((yn > y) ? 1 : -1);
+                let sy = this.compute_y(lines[1], Math.abs(z)) * ((yp > y) ? 1 : -1);
+
+                if (zn >= 0 && zp >= 0) {
+                    n_v = [...n_v,
+                        new Vector3D(vector.x + sx, vector.y + sy, vector.z + Math.abs(z)),
+                        new Vector3D(vector.x + fx, vector.y + fy, vector.z + Math.abs(z)),
                     ];
-                } else if (p1.z > this.position.z || p2.z > this.position.z) {
-                    new_vectors = [...new_vectors, {...vectors[i], z: this.position.z}];
+                } else if (zn >= 0 || zp >= 0) {
+                    n_v = [...n_v, new Vector3D(
+                                    vector.x + ((zn >= 0) ? fx : sx), 
+                                    vector.y + ((zn >= 0) ? fy : sy), 
+                                    vector.z + Math.abs(z),
+                                )];
                 }
             } else {
-                new_vectors = [...new_vectors, vectors[i]];
+                n_v = [...n_v, vector];
             }
+            
         }
-        return new_vectors;
+        return n_v;
     }
 
     project = (vectors, w, h) => {
         let project2D = [];
+
+        let v = this.rotateX(this.rotateY(vectors));
+        v = this.depth_clip(v);
+
+        let fov = this.compute_radian(70 * 0.5);
+        let near = 0.2;
+        let far = 1000;
+        let projection_matrix = [(h / w) * (1 / Math.tan(fov)),
+                                    1 / Math.tan(fov),
+                                    far / (far - near),
+                                    (-far * near) / (far - near)];
+
         
-        let focal_length = this.focal_length;
-        
-        let v = vectors.slice();
-        
+
         for (let i = 0; i < v.length; i++) {
             let vector = v[i];
-            
-            let vz = (vector.z - this.position.z) || 1;
-            let m = (focal_length / vz);
-            
-            let x = (vector.x - this.position.x) * m + w;
-            let y = (vector.y - this.position.y) * m + h;
 
-            project2D = [...project2D, new Vector2D(x, y)];
-        }
+            let p = new Vector3D(
+                (vector.x - this.position.x) * projection_matrix[0],
+                (vector.y - this.position.y) * projection_matrix[1],
+                ((vector.z - this.position.z) * projection_matrix[2]) + ((vector.z - this.position.z) * projection_matrix[3]),
+                (vector.z - this.position.z),
+            );
+
+
+            if (p.w != 0) {
+                p.x /= p.w;
+                p.y /= p.w;
+                p.z /= p.w;
+            }
+
+            
     
+            let x = (p.x + 1) * 0.5 * w;
+            let y = (p.y + 1) * 0.5 * h;
+
+            project2D = [...project2D, new Vector3D(x, y, p.z, p.w)];
+            
+        }
+
         return project2D;
     }
 
@@ -89,11 +131,11 @@ class Camera {
 
         for (let i = 0; i < vectors.length; i++) {
             let v = vectors[i];
-            
+
             let x = (v.x - this.position.x) * Math.cos(this.rotation.y) + (v.z - this.position.z) * Math.sin(this.rotation.y);
             let z = (v.z - this.position.z) * Math.cos(this.rotation.y) - (v.x - this.position.x) * Math.sin(this.rotation.y);
-    
-            
+
+
             b[i] = new Vector3D(x + this.position.x, v.y, z + this.position.z);
         }
 
@@ -108,7 +150,7 @@ class Camera {
 
             let y = (v.y - this.position.y) * Math.cos(this.rotation.x) - (v.z - this.position.z) * Math.sin(this.rotation.x);
             let z = (v.z - this.position.z) * Math.cos(this.rotation.x) + (v.y - this.position.y) * Math.sin(this.rotation.x);
-            
+
             b[i] = new Vector3D(v.x, y + this.position.y, z + this.position.z);
         }
 
@@ -117,10 +159,10 @@ class Camera {
 
     is_collide = (blocks, x, y, z) => {
         let y_pos = Math.round(y);
-        
+
         let b = blocks.slice().find((v) => {
-            return ((v.x <= x + 15 && v.x + 50 >= x - 15) && (v.z <= z + 15 && v.z + 50 >= z - 15)) 
-                    && ((v.y < (y_pos + 90) && v.y > y_pos) || ((v.y + 40) < (y_pos + 90) && (v.y + 40) > y_pos));
+            return ((v.x <= x + 15 && v.x + 50 >= x - 15) && (v.z <= z + 15 && v.z + 50 >= z - 15))
+                && ((v.y < (y_pos + 90) && v.y > y_pos) || ((v.y + 40) < (y_pos + 90) && (v.y + 40) > y_pos));
         });
 
         return (b) ? b : false;
@@ -129,32 +171,32 @@ class Camera {
     update_position = (blocks, width, height) => {
         let r = this.rotateY([new Vector3D(this.position.x, 0, this.position.z + 100)]);
         let vector = r[0];
-        
+
         let vz = vector.z - this.position.z;
         let m = (this.focal_length / vz) || 50;
 
-        let n = {...r[0], x: r[0].x - this.position.x, z: (r[0].z - this.position.z)};
+        let n = { ...r[0], x: r[0].x - this.position.x, z: (r[0].z - this.position.z) };
 
         r[0].x = -(vector.x - this.position.x) * Math.abs(m) + (width * 0.5);
         r[0].y = (vector.y - this.position.y) * Math.abs(m) + (height * 0.5);
-        
+
         let prop_z = n.z / 100;
         let prop_x = -n.x / 100;
-        
 
-        let [n_cam_zz, n_cam_xx, n_cam_zx, n_cam_xz] = [this.velocity.z * (prop_z), 
-                                    -this.velocity.x * (prop_x), 
-                                    this.velocity.z * (prop_x), 
-                                    this.velocity.x * (prop_z)];
+
+        let [n_cam_zz, n_cam_xx, n_cam_zx, n_cam_xz] = [this.velocity.z * (prop_z),
+        -this.velocity.x * (prop_x),
+        this.velocity.z * (prop_x),
+        this.velocity.x * (prop_z)];
         let v_x = n_cam_zx + n_cam_xz;
         let v_z = n_cam_zz + n_cam_xx;
 
         let z_col = this.is_collide(blocks, this.position.x, this.position.y, this.position.z + v_z);
-                    
+
         let x_col = this.is_collide(blocks, this.position.x + v_x, this.position.y, this.position.z);
 
-        this.position.z += (!z_col) ? v_z: 0;
-        this.position.x += (!x_col) ? v_x: 0;
+        this.position.z += (!z_col) ? v_z : 0;
+        this.position.x += (!x_col) ? v_x : 0;
 
 
         let bottom = this.is_collide(blocks, this.position.x, this.position.y + this.velocity.y + 1, this.position.z);
@@ -162,7 +204,6 @@ class Camera {
         if (bottom && this.velocity.y >= 0) this.velocity.y = 0;
         else this.velocity.y += (this.velocity.y < 50) ? 2 : 0;
 
-        
 
         if (!bottom) {
             this.position.y += this.velocity.y;
@@ -170,125 +211,6 @@ class Camera {
             if (this.velocity.y == 0) this.position.y = bottom.y - 90;
             else this.velocity.y = 2;
         }
-    }
-    
-    clipping_x = (vectors) => {
-        let n_v = [];
-        let line;
-
-        for (let i = 0; i < vectors.length; i++) {
-            let p1;
-            let p2;
-
-            if (i == 0) {
-                p1 = vectors[vectors.length - 1];
-                p2 = vectors[i + 1];
-            } else if (i == (vectors.length - 1)) {
-                p1 = vectors[i - 1];
-                p2 = vectors[0];
-            } else {
-                p1 = vectors[i - 1];
-                p2 = vectors[i + 1];
-            }
-
-            line = [
-                new Vector2D(Math.abs(vectors[i].x - p1.x), Math.abs(vectors[i].y - p1.y)),
-                new Vector2D(Math.abs(vectors[i].x - p2.x), Math.abs(vectors[i].y - p2.y)),
-            ];
-
-            if (vectors[i].x < 0) {
-                let n_y = this.compute_y(line[0], Math.abs(vectors[i].x)) * ((vectors[i].y < p1.y) ? 1 : -1);
-                let n2_y = this.compute_y(line[1], Math.abs(vectors[i].x)) * ((vectors[i].y < p2.y) ? 1 : -1);
-                if (p1.x > 0 && p2.x > 0) {
-                    n_v = [...n_v,
-                        new Vector2D(0, vectors[i].y + n_y),
-                        new Vector2D(0, vectors[i].y + n2_y),
-                    ];
-                } else if (p1.x > 0 || p2.x > 0) {
-                    n_v = [...n_v,
-                        new Vector2D(0, vectors[i].y + ((p1.x > 0) ? n_y : n2_y)),
-                    ];
-                }
-
-            } else if (vectors[i].x > this.width) {
-                let n_y = this.compute_y(line[0], this.width - vectors[i].x) * ((vectors[i].y > p1.y) ? 1 : -1);
-                let n2_y = this.compute_y(line[1], this.width - vectors[i].x) * ((vectors[i].y > p2.y) ? 1 : -1);
-
-                if (p1.x < this.width && p2.x < this.width) {
-                    n_v = [...n_v, 
-                        new Vector2D(this.width, vectors[i].y + n_y),
-                        new Vector2D(this.width, vectors[i].y + n2_y),
-                    ];
-                } else if (p1.x <= this.width || p2.x <= this.width) {
-                    n_v = [...n_v, 
-                        new Vector2D(this.width, vectors[i].y + ((p1.x < this.width) ? n_y : n2_y)),
-                    ];
-                }
-            } else {
-                n_v.push(vectors[i]);
-            }
-        }
-
-        return n_v;
-    }
-
-    
-    clipping_y = (vectors) => {
-        let n_v = [];
-        let line;
-
-        for (let i = 0; i < vectors.length; i++) {
-            let p1;
-            let p2;
-            if (i == 0) {
-                p1 = vectors[vectors.length - 1];
-                p2 = vectors[i + 1];
-            } else if (i == (vectors.length - 1)) {
-                p1 = vectors[i - 1];
-                p2 = vectors[0];
-            } else {
-                p1 = vectors[i - 1];
-                p2 = vectors[i + 1];
-            }
-            line = [
-                new Vector2D(Math.abs(vectors[i].x - p1.x), Math.abs(vectors[i].y - p1.y)),
-                new Vector2D(Math.abs(vectors[i].x - p2.x), Math.abs(vectors[i].y - p2.y)),
-            ];
-            if (vectors[i].y < 0) {
-                let n_x = this.compute_x(line[0], Math.abs(vectors[i].y)) * ((vectors[i].x < p1.x) ? 1 : -1);
-                let n2_x = this.compute_x(line[1], Math.abs(vectors[i].y)) * ((vectors[i].x < p2.x) ? 1 : -1);
-
-                if (p1.y > 0 && p2.y > 0) {
-                    n_v = [...n_v,
-                        new Vector2D(vectors[i].x + n_x, 0),
-                        new Vector2D(vectors[i].x + n2_x, 0),
-                    ];
-                } else if (p1.x > 0 || p2.x > 0) {
-                    n_v = [...n_v,
-                        new Vector2D(vectors[i].x + ((p1.y > 0) ? n_x : n2_x), 0),
-                    ];
-                }
-
-            } else if (vectors[i].y > this.height) {
-                let n_x = this.compute_x(line[0], this.height - vectors[i].y) * ((vectors[i].x > p1.x) ? 1 : -1);
-                let n2_x = this.compute_x(line[1], this.height - vectors[i].y) * ((vectors[i].x > p2.x) ? 1 : -1);
-
-                if (p1.y < this.height && p2.y < this.height) {
-                    n_v = [...n_v, 
-                        new Vector2D(vectors[i].x + n_x , this.height),
-                        new Vector2D(vectors[i].x + n2_x, this.height),
-                    ];
-                } else if (p1.y < this.height || p2.y < this.height) {
-                    n_v = [...n_v, 
-                        new Vector2D(vectors[i].x + ((p1.y < this.height) ? n_x : n2_x), this.height),
-                    ];
-                }
-            } else {
-                n_v.push(vectors[i]);
-            }
-        }
-
-        return n_v;
     }
 }
 

@@ -1,8 +1,7 @@
 # Simple Block (Final project)
 #### Video Demo: `Coming Soon`
 #### Description
-'Simple Block' is a simple game made with JavaScript that allows you to add colorful cubes into a 3D space.
-The project handles its own 3D graphics librairy and some basic physics like collisions & velocity.
+'Simple Block' is a simple game made with JavaScript that allows you to add colorful cubes into a 3D space. The project handles its own 3D graphics library and some basic physics like collisions & velocity.
 
 ##### Scene & Render
 `class Scene` handles useful methods to render 2D projection of a 3D space, the constructor method takes a width, height and '2D' context as argument :
@@ -34,13 +33,13 @@ class Camera {
 }
 scene.camera = new Camera(x, y, z);
 ```
-Using those informations, `camera.project(vectors, width, height)` method can calculate 3d objects vectors and return a perspective projection in 2d space.
-`camera.project` do matrices multiplications and depth clipping before return a transformed vectors.
+Using those information, `camera.project(vectors, width, height)` method can calculate 3d objects vectors and return a perspective projection in 2d space.
+`camera.project` does matrices multiplications and depth clipping before returning transformed vectors.
 
 ##### Rotation
-`camera.rotation = {x, y}` represent the x and y 3D space's rotation around the camera (The camera is the origin), and takes only gradians (`degrees * (Math.PI/180)`) as properties.
-Those gradians will be used by `camera.rotateX(camera.rotateY(vectors)) : vectors` methods just before the projection to figure out where the camera is looking, and use rotation matrix to compute the new position of the blocks.
+`camera.rotation = {x, y}` represent the x and y 3D space's rotations around the camera (The camera is the origin), and takes only radian (`degrees * (Math.PI/180)`) as properties.
+Those radian will be used by `camera.rotateX(camera.rotateY(vectors)) : vectors` methods just before the projection to figure out where the camera is looking, and use the rotation matrix to compute the new position of the blocks.
 
 ##### Velocity & Collision 
-`camera.velocity = {x, y, z}` represent the movement of the camera into the 3D space, `camera.update_position` method compute the camera's pointing direction using `camera.rotation` to get the direction of the new position at each frame.
+`camera.velocity = {x, y, z}` represent the movement of the camera into the 3D space, `camera.update_position` method computes the camera's pointing direction using `camera.rotation` to get the direction of the new position in each frame.
 Before update `camera.position`, a method (`camera.is_collide(blocks)`) is called to check if any collision is there. 

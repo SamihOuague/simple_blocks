@@ -38,9 +38,9 @@ Using those informations, `camera.project(vectors, width, height)` method can ca
 `camera.project` do matrices multiplications and depth clipping before return a transformed vectors.
 
 ##### Rotation
-`camera.rotation = {x, y}` has to be an `Object` representing the x and y 3D space's rotation around the camera (The camera is the origin), and takes only gradians (`degrees * (Math.PI/180)`) as properties.
+`camera.rotation = {x, y}` represent the x and y 3D space's rotation around the camera (The camera is the origin), and takes only gradians (`degrees * (Math.PI/180)`) as properties.
 Those gradians will be used by `camera.rotateX(camera.rotateY(vectors)) : vectors` methods just before the projection to figure out where the camera is looking, and use rotation matrix to compute the new position of the blocks.
 
 ##### Velocity & Collision 
-
-
+`camera.velocity = {x, y, z}` represent the movement of the camera into the 3D space, `camera.update_position` method compute the camera's pointing direction using `camera.rotation` to get the direction of the new position at each frame.
+Before update `camera.position`, a method (`camera.is_collide(blocks)`) is called to check if any collision is there. 

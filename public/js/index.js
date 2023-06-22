@@ -100,13 +100,10 @@ let select_color = (e) => {
 }
 
 const mouse_down = (e) => {
-
-
     if (e.buttons == 1) {
         scene.add_block(colors[selected_color]);
     } else if (e.buttons == 2) {
         scene.delete_block();
-        
     }
 }
 

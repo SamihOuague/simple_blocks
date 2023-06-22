@@ -1,11 +1,10 @@
 import { Vector3D, Vector2D } from "./Vector";
 
 class Camera {
-    constructor(x, y, z, focal_length = 200) {
+    constructor(x, y, z) {
         this.position = new Vector3D(x, y, z);
-        this.rotation = new Vector2D(0, 0, 0);
+        this.rotation = new Vector2D(0, 0);
         this.velocity = new Vector3D(0, 0, 0);
-        this.focal_length = focal_length;
     }
 
     compute_x = (vector, z) => {
@@ -114,12 +113,10 @@ class Camera {
                 p.z /= p.w;
             }
 
-            
-    
             let x = (p.x + 1) * 0.5 * w;
             let y = (p.y + 1) * 0.5 * h;
 
-            project2D = [...project2D, new Vector3D(x, y, p.z, p.w)];
+            project2D = [...project2D, new Vector2D(x, y)];
             
         }
 
@@ -168,17 +165,17 @@ class Camera {
         return (b) ? b : false;
     }
 
-    update_position = (blocks, width, height) => {
+    update_position = (blocks) => {
         let r = this.rotateY([new Vector3D(this.position.x, 0, this.position.z + 100)]);
         let vector = r[0];
 
         let vz = vector.z - this.position.z;
-        let m = (this.focal_length / vz) || 50;
+        let m = (r.z / vz) || 50;
 
         let n = { ...r[0], x: r[0].x - this.position.x, z: (r[0].z - this.position.z) };
 
-        r[0].x = -(vector.x - this.position.x) * Math.abs(m) + (width * 0.5);
-        r[0].y = (vector.y - this.position.y) * Math.abs(m) + (height * 0.5);
+        r[0].x = -(vector.x - this.position.x) * Math.abs(m);
+        r[0].y = (vector.y - this.position.y) * Math.abs(m) ;
 
         let prop_z = n.z / 100;
         let prop_x = -n.x / 100;

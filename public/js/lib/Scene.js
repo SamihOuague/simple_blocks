@@ -5,7 +5,6 @@ import Block from "./Block";
 class Scene {
     constructor(w, h, ctx) {
         this.blocks = [];
-        this.grid = [];
         this.width = w;
         this.height = h;
         this.ctx = ctx;
@@ -103,7 +102,7 @@ class Scene {
         face = this.camera.project(face, this.width, this.height);
 
         for (let i = 0; i < face.length; i++) {
-            let { x, y, z, w } = face[i];
+            let { x, y } = face[i];
             if (i == 0) {
                 this.ctx.moveTo(x, y);
             } else {

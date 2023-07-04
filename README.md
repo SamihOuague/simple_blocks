@@ -1,5 +1,5 @@
 # Simple Block (Final project)
-#### Video Demo: `Coming Soon`
+#### Video Demo: `https://www.youtube.com/watch?v=8Rz7maeyzmc`
 #### Description
 'Simple Block' is a simple game made with JavaScript that allows you to add colorful cubes into a 3D space. The project handles its own 3D graphics library and some basic physics like collisions & velocity.
 
